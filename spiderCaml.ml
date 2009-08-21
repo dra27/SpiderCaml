@@ -37,6 +37,9 @@ module Ctx = struct
   external set_version: t -> int -> unit = "caml_js_set_version"
 end
 
+type jsid = int32
+type jstype = Void | Object | Function | String | Number | Boolean | Null
+
 module Val = struct
   type t = jsval
   external runtime: t -> Rt.t = "caml_js_rt_of_value"
@@ -45,6 +48,10 @@ module Val = struct
   external special_csts: int -> t = "caml_js_special_csts"
   external string: Ctx.t -> string -> t = "caml_js_new_string"
   external float: Ctx.t -> float -> t = "caml_js_new_double"
+
+  external id : Ctx.t -> t -> int32 = "caml_js_id"
+  external equal: Ctx.t -> t -> t -> bool = "caml_js_equal"
+  external getclass: Ctx.t -> t -> string option = "caml_js_getclass"
 
   external to_string: Ctx.t -> t -> string = "caml_js_to_string"
   external to_object: Ctx.t -> t -> t = "caml_js_to_object"
@@ -73,6 +80,7 @@ module Val = struct
   external is_double: Ctx.t -> t -> bool = "caml_js_is_double"
   external is_array: Ctx.t -> t -> bool = "caml_js_is_array"
 
+  external typeof: Ctx.t -> t -> jstype = "caml_js_typeof"
   external get_boolean: Ctx.t -> t -> bool = "caml_js_get_boolean"
   external get_int: Ctx.t -> t -> int = "caml_js_get_int"
   external get_string: Ctx.t -> t -> string = "caml_js_get_string"
@@ -116,6 +124,11 @@ let mkobjops new_jsobj active =
 
 class jsobj cx o = object(this:'this)
   method v = o
+
+  method equals (v : jsobj) = Val.equal cx o (v#v)
+  method id = Val.id cx o
+  method class_name = Val.getclass cx o
+
   method set n (v : jsobj) = Val.set_prop cx o n (v#v)
   method get n = new jsobj cx (Val.get_prop cx o n)
   method set_idx n (v : jsobj) = Val.set_elem cx o n (v#v)
@@ -175,6 +188,7 @@ class jsobj cx o = object(this:'this)
   method is_float = Val.is_double cx o
   method is_array = Val.is_array cx o
 
+  method classify = Val.typeof cx o
   method get_bool = Val.get_boolean cx o
   method get_int = Val.get_int cx o
   method get_string = Val.get_string cx o
@@ -196,3 +210,70 @@ let new_global_obj ?active () = global_obj (Ctx.create
 					      (mkobjops (new jsobj) active))
 
 external implementation_version: unit -> string = "caml_js_implementation_version"
+
+module JSSet = Set.Make(struct type t = jsid let compare = compare end)
+
+let jsobj_printer f (v : jsobj) =
+  let inspect v =
+    let rec inspect s v =
+      if JSSet.mem v#id s
+      then "..."
+      else if v#is_array
+           then let length = (v#get "length")#get_int
+                in
+                  let rec buildList n acc =
+                    if n < length
+                    then buildList (succ n) ((inspect (JSSet.add v#id s) (v#get_idx n))::acc)
+                    else acc
+                  in
+                    Printf.sprintf "[%s]" (String.concat ", " (buildList 0 []))
+           else if v#is_int
+                then let n = v#get_int in Printf.sprintf "%d (0x%x)" n n
+                else let classification = v#classify
+                     in
+                       match classification with
+                         Void     -> "undefined"
+                       | Object
+                       | Function ->
+                           let prefix =
+                             let prefix =
+                               if classification = Function
+                               then "(function) "
+                               else ""
+                             in
+                               match v#class_name with
+                                 Some name when name <> "Function" ->
+                                   Printf.sprintf "%s<%s> " prefix name
+                               | _ ->
+                                   prefix
+                           in
+                             let rec buildList acc props =
+                               match props with
+                                 prop::props ->
+                                   let prop =
+                                     if prop#is_string
+                                     then let prop = prop#get_string
+                                          in
+                                            let prn =
+                                              try
+                                                ignore (int_of_string prop);
+                                                Printf.sprintf "'%s'" prop
+                                              with _ -> prop
+                                            in
+                                              Printf.sprintf "%s: %s" prn (inspect (JSSet.add v#id s) (v#get prop))
+                                     else let prop = prop#get_int
+                                          in
+                                            Printf.sprintf "%d: %s" prop (inspect (JSSet.add v#id s) (v#get_idx prop))
+                                   in
+                                     buildList (prop::acc) props
+                               | []          -> acc
+                             in
+                               Printf.sprintf "%s{%s}" prefix (String.concat ", " (buildList [] (List.rev v#enumerate)))
+                       | String   -> Printf.sprintf "'%s'" v#get_string
+                       | Number   -> Printf.sprintf "%f" v#get_float
+                       | Boolean  -> Printf.sprintf "%b" v#get_bool
+                       | Null     -> "null"
+    in
+      inspect JSSet.empty v
+  in
+    Format.fprintf f "%s" (inspect v);;

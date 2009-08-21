@@ -504,6 +504,17 @@ tester_getter(int,JSVAL_IS_INT,JSVAL_TO_INT,Val_int);
 tester_getter(string,JSVAL_IS_STRING,JSVAL_TO_STRING,jsstring_to_caml);
 tester_getter(double,JSVAL_IS_DOUBLE,JSVAL_TO_DOUBLE,jsdouble_to_caml);
 
+CAMLprim value caml_js_typeof(value cx, value v){
+  CAMLparam2(cx,v);
+  JSContext *ctx = get_ctx(cx);
+  JSRuntime *rt = JS_GetRuntime(ctx);
+  jsval jv = caml_to_jsval(rt,v);
+  JSType res = JSTYPE_NULL;
+  if (!JSVAL_IS_NULL(jv))
+    res = JS_TypeOfValue(ctx,jv);
+  CAMLreturn(Val_int(res));
+}
+
 #define wrap_obj(rt,o) jsval_to_caml(rt,OBJECT_TO_JSVAL(o))
 
 CAMLprim value caml_js_to_object(value ctx, value v){
@@ -521,6 +532,21 @@ static JSObject* unwrap_obj(JSRuntime *rt, value v){
   jsval jv = caml_to_jsval(rt,v);
   if (JSVAL_IS_OBJECT(jv)) { return JSVAL_TO_OBJECT(jv); }
   else { raise_constant(*caml_named_value("js invalid type")); }  
+}
+
+CAMLprim value caml_js_getclass(value ctx, value v){
+  CAMLparam2(ctx,v);
+  CAMLlocal1(res);
+  JSContext *cx = get_ctx(ctx);
+  JSRuntime *rt = JS_GetRuntime(cx);
+  char *name = JS_GET_CLASS(cx,unwrap_obj(rt,v))->name;
+  if (name == NULL)
+    res = Val_int(0); // None constructor
+  else {
+    res = caml_alloc(1, 0); // Some constructor
+    Store_field(res, 0, caml_copy_string(name));
+  }
+  CAMLreturn(res);
 }
 
 CAMLprim value caml_js_get_global_object(value cx) {
@@ -583,6 +609,22 @@ CAMLprim value caml_js_get_elem(value cx, value obj, value idx){
   if (!ok)
     failwith("js get elem");
   CAMLreturn(jsval_to_caml(rt,ret));
+}
+
+CAMLprim value caml_js_id(value cx, value obj){
+  CAMLparam2(cx,obj);
+  JSContext *ctx = get_ctx(cx);
+  JSRuntime *rt = JS_GetRuntime(ctx);
+  CAMLreturn(caml_copy_int32((int)caml_to_jsval(rt,obj)));
+}
+
+CAMLprim value caml_js_equal(value cx, value left, value right){
+  CAMLparam3(cx,left,right);
+  JSContext *ctx = get_ctx(cx);
+  JSRuntime *rt = JS_GetRuntime(ctx);
+  jsval jleft = caml_to_jsval(rt,left);
+  jsval jright = caml_to_jsval(rt,right);
+  CAMLreturn(Val_bool(jleft == jright));
 }
 
 CAMLprim value caml_js_enumerate(value cx, value obj){

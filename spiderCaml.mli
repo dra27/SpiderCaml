@@ -24,6 +24,17 @@
 type jsval
   (** Internal use. *)
 
+type jsid
+  (** JavaScript value identifiers. *)
+
+type jstype = Void
+            | Object
+            | Function
+            | String
+            | Number
+            | Boolean
+            | Null
+
 type 'a active = {
   setter: string -> 'a -> 'a;
   getter: string -> 'a -> 'a;
@@ -51,6 +62,18 @@ class type jsobj = object
     (** Evaluate a Javascript expression in the context of the current
 	object.
 	Raise [InvalidType] if the value is not an object. *)
+
+  method equals : jsobj -> bool
+    (** Physical equality of JavaScript values. *)
+
+  method class_name : string option
+    (** Returns the class name of this object if it has one.
+  Raise [InvalidType] if the value is not an object. *)
+
+  method id : jsid
+    (** An id which can be used to index [jsobj] values. Two [jsobj]
+  values are guaranteed to have the same [id] if they physically
+  the same value. *)
 
   (** Access to properties. *)
 
@@ -117,6 +140,9 @@ class type jsobj = object
   method is_float : bool
   method is_array : bool
 
+  method classify : jstype
+    (** Returns the classification of this object. *)
+
   method get_int : int
     (** Raise [InvalidType] is the value is not an integer. *)
   method get_bool : bool
@@ -161,6 +187,9 @@ class type jsobj = object
 (**/**)
   method v : jsval
 end
+
+val jsobj_printer : Format.formatter -> jsobj -> unit
+  (** Toploop printer for JavaScript values. *)
 
 val new_global_obj : ?active:(jsobj active) -> unit -> jsobj
   (** Create a new global object. *)
