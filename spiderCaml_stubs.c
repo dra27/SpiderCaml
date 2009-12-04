@@ -692,7 +692,7 @@ CAMLprim value caml_js_is_array(value cx, value v){
   JSContext *ctx = get_ctx(cx);
   jsval jv = caml_to_jsval(JS_GetRuntime(ctx),v);
   return 
-    Val_bool(JSVAL_IS_OBJECT(jv) && JS_IsArrayObject(ctx,JSVAL_TO_OBJECT(jv)));
+    Val_bool(!JSVAL_IS_NULL(jv) && JSVAL_IS_OBJECT(jv) && JS_IsArrayObject(ctx,JSVAL_TO_OBJECT(jv)));
 }
 
 /* Misc */
