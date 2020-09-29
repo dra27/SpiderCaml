@@ -539,7 +539,7 @@ CAMLprim value caml_js_getclass(value ctx, value v){
   CAMLlocal1(res);
   JSContext *cx = get_ctx(ctx);
   JSRuntime *rt = JS_GetRuntime(cx);
-  char *name = JS_GET_CLASS(cx,unwrap_obj(rt,v))->name;
+  const char *name = JS_GET_CLASS(cx,unwrap_obj(rt,v))->name;
   if (name == NULL)
     res = Val_int(0); // None constructor
   else {
