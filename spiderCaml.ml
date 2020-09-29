@@ -105,7 +105,7 @@ external eval_script: Ctx.t -> Val.t -> string -> Val.t = "caml_js_evaluate_scri
 
 (* Simplified API *)
 
-let getProp cx prop v =
+let _getProp cx prop v =
   Printf.printf "Get prop %s = %s\n" prop (Val.to_string cx v);
   v
 
