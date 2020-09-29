@@ -1,0 +1,15 @@
+(library
+  (name SpiderCaml)
+  (public_name SpiderCaml)
+  (flags (:include flags.sexp))
+  (foreign_stubs
+    (language c)
+    (names spiderCaml_stubs)
+    (flags (:include stubs.sexp))))
+
+(rule
+  (deps configure.ml (package SpiderMonkey))
+  (action (with-stdout-to stubs.sexp (run ocaml configure.ml stubs %{lib:SpiderMonkey:jsapi.h}))))
+
+(rule
+  (with-stdout-to flags.sexp (run ocaml %{dep:configure.ml} flags %{lib:SpiderMonkey:jsapi.h})))

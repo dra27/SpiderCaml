@@ -16,7 +16,6 @@
 #undef uint64
 #undef uint32
 
-#define XP_UNIX
 #include "jsapi.h"
 
 #define STACK_CHUNK_SIZE    8192
