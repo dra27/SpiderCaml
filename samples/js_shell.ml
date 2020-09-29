@@ -1,7 +1,7 @@
 open SpiderCaml
 
 let report_error_message = function
-  | { Error.line = Some l } as e ->
+  | { Error.line = Some l; _ } as e ->
       Printf.printf "JS error '%s', at line %i.\n%s\n%s^\n"
 	e.Error.message
 	e.Error.lineno
