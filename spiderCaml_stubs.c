@@ -3,10 +3,8 @@
 
 #define int64 caml_int64
 #define int32 caml_int32
-#define int16 caml_int16
 #define uint64 caml_uint64
 #define uint32 caml_uint32
-#define uint16 caml_uint16
 #include <caml/mlvalues.h>
 #include <caml/callback.h>
 #include <caml/memory.h>
@@ -15,10 +13,8 @@
 #include <caml/fail.h>
 #undef int64
 #undef int32
-#undef int16
 #undef uint64
 #undef uint32
-#undef uint16
 
 #define XP_UNIX
 #include "jsapi.h"
