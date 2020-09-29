@@ -80,6 +80,7 @@ class type jsobj = object
   method get : string -> jsobj
     (** Get the value of a named property. Raise [InvalidType]
 	if the value is not an object. *)
+
   method set : string -> jsobj -> unit
     (** Set the value of a named property.  Raise [InvalidType]
 	if the value is not an object. *)
@@ -87,6 +88,7 @@ class type jsobj = object
   method get_idx : int -> jsobj
     (** Get the value of a numeric property.  Raise [InvalidType]
 	if the value is not an object. *)
+
   method set_idx : int -> jsobj -> unit
     (** Set the value of a numeric property.  Raise [InvalidType]
 	if the value is not an object. *)
@@ -101,9 +103,11 @@ class type jsobj = object
   method new_child : ?proto:jsobj -> ?active:(jsobj active) -> unit -> jsobj
     (** Create a new object whose parent is the current object.
 	Raise [InvalidType] if the value is not an object. *)
+
   method new_object : ?proto:jsobj -> ?active:(jsobj active) -> unit -> jsobj
     (** Create a new object with no parent.
 	Raise [InvalidType] if the value is not an object. *)
+
   method new_object_gen : ?proto:jsobj -> ?parent:jsobj -> ?active:(jsobj active) -> unit -> jsobj
     (** Create a new object with a specific parent.
 	Raise [InvalidType] if the value is not an object. *)
@@ -145,10 +149,13 @@ class type jsobj = object
 
   method get_int : int
     (** Raise [InvalidType] is the value is not an integer. *)
+
   method get_bool : bool
     (** Raise [InvalidType] is the value is not a boolean. *)
+
   method get_string : string
     (** Raise [InvalidType] is the value is not a string. *)
+
   method get_float : float
     (** Raise [InvalidType] is the value is not a double. *)
 
